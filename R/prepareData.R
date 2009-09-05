@@ -1,8 +1,14 @@
 library(reshape)
+
+
+
+
+
+
 set.seed(20091975)
 year <- 2000
 office.now <- "Vereador"   
-small.sample <- FALSE
+small.sample <- TRUE
 fname <- paste("../data/data",year,if(small.sample) "small",office.now,".RData",sep="")
 
 
@@ -58,7 +64,7 @@ dim(coalitions)
 ##single state
 ##coalitions <- subset(coalitions,uf=="RS")
 
-tmp <- strsplit(coalitions$coalition,"/")
+tmp <- strsplit(as.character(coalitions$coalition),"/")
 tmp <- lapply(tmp,sort)
 tmp <- lapply(tmp,function(x) paste(x,collapse="/"))
 tmp <- unlist(tmp)

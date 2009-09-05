@@ -1,3 +1,253 @@
+model.bugs.14 <- function() {
+  ## scale for the priors
+  sdp <- 100
+  sds <- sdp*sdp
+  for (i in 1:n.rows) {
+    y[i]~dbern(p[i])
+    d[i] <- abs(x[party.i[i],state.i[i]]-x[party.j[i],state.i[i]])
+    xb1[i] <- -d[i]+g[group[i]]+b[1]+b[2]*th.i[i]+
+      b[3]*log.magnitude[i]+b[4]*party.gov.j[i]+b[5]*benefit.i[i]+b[6]*log.votes.i[i]
+    xb2[i] <- -d[i]+g[group[i]]+b[1]+b[2]*th.j[i]+
+      b[3]*log.magnitude[i]+b[4]*party.gov.i[i]+b[5]*benefit.j[i]+b[6]*log.votes.j[i]
+    p[i] <- phi(xb1[i])*phi(xb2[i])
+  }
+  ## proportion correct
+  c1 <- (sum((p>.5)*y)+sum((p<.5)*(1-y)))/n.rows
+  ##  priors
+  sigma.x ~ dunif(0,sdp)
+  tau.x <- pow(sigma.x,-2)
+  for (i in 1:6) {
+    b[i] ~ dnorm(0,pow(sdp,-2))
+  }
+  ## spike priors for parties 1 and 2
+  mu.x[1] ~ dnorm(-1,sds)
+  mu.x[2] ~ dnorm(1,sds)
+  ## weakly informative for remaining parties
+  for (i in 3:n.parties) {
+    mu.x[i] ~ dnorm(0,pow(sdp,-2))
+  }
+  ## normal priors for parties 3:n.parties
+  for (i in 3:n.parties) {
+    for (j in 1:n.states) {
+      x[i,j] ~ dnorm(mu.x[i],tau.x)
+    }
+  }
+  ## truncated priors (so 1 is negative and 2 is positive) for parties 1 and 2
+  for (j in 1:n.states) {
+    x[1,j] ~ dnorm(mu.x[1],tau.x)%_%T(,0)
+    x[2,j] ~ dnorm(mu.x[2],tau.x)%_%T(0,)
+  }
+  for (i in 1:n.groups) {
+    g[i] ~ dnorm(0,tau.g)
+  }
+  sigma.g ~ dunif(0,sdp)
+  tau.g <- pow(sigma.g,-2)
+}
+
+
+
+
+
+
+
+model.bugs.13 <- function() {
+  ## scale for the priors
+  sdp <- 1000
+  sds <- sdp*sdp
+  for (i in 1:n.rows) {
+    y[i]~dbern(p[i])
+    d[i] <- abs(x[party.i[i],state.i[i]]-x[party.j[i],state.i[i]])
+    xb1[i] <- -d[i]+g[group[i]]+b[1]+b[2]*log.votes.i[i]+
+      b[3]*log.magnitude[i]+b[4]*party.gov.i[i]
+    xb2[i] <- -d[i]+g[group[i]]+b[1]+b[2]*log.votes.j[i]+
+      b[3]*log.magnitude[i]+b[4]*party.gov.j[i]
+    p[i] <- phi(xb1[i])*phi(xb2[i])
+  }
+  ## proportion correct
+  c1 <- (sum((p>.5)*y)+sum((p<.5)*(1-y)))/n.rows
+  ##  priors
+  sigma.x ~ dunif(0,sdp)
+  tau.x <- pow(sigma.x,-2)
+  for (i in 1:4) {
+    b[i] ~ dnorm(0,pow(sdp,-2))
+  }
+  ## spike priors for parties 1 and 2
+  mu.x[1] ~ dnorm(-1,sds)
+  mu.x[2] ~ dnorm(1,sds)
+  ## weakly informative for remaining parties
+  for (i in 3:n.parties) {
+    mu.x[i] ~ dnorm(0,pow(sdp,-2))
+  }
+  ## normal priors for parties 3:n.parties
+  for (i in 3:n.parties) {
+    for (j in 1:n.states) {
+      x[i,j] ~ dnorm(mu.x[i],tau.x)
+    }
+  }
+  ## truncated priors (so 1 is negative and 2 is positive) for parties 1 and 2
+  for (j in 1:n.states) {
+    x[1,j] ~ dnorm(mu.x[1],tau.x)%_%T(,0)
+    x[2,j] ~ dnorm(mu.x[2],tau.x)%_%T(0,)
+  }
+  for (i in 1:n.groups) {
+    g[i] ~ dnorm(0,tau.g)
+  }
+  sigma.g ~ dunif(0,sdp)
+  tau.g <- pow(sigma.g,-2)
+}
+
+
+## model.09 with gov state
+model.bugs.12 <- function() {
+  sdp <- 10
+  for (i in 1:n.rows) {
+    y[i]~dbern(p[i])
+    d[i] <- abs(x[party.i[i],state.i[i]]-x[party.j[i],state.i[i]])
+    xb1[i] <- -d[i]+g[group[i]]+b[1]+b[2]*log.votes.i[i]+
+      b[3]*log.magnitude[i]+b[4]*party.gov.i[i]
+    xb2[i] <- -d[i]+g[group[i]]+b[1]+b[2]*log.votes.j[i]+
+      b[3]*log.magnitude[i]+b[4]*party.gov.j[i]
+    p[i] <- phi(xb1[i])*phi(xb2[i])
+  }
+  ##correct
+  c1 <- (sum((p>.5)*y)+sum((p<.5)*(1-y)))/n.rows
+  ##  priors
+  sigma.x ~ dunif(0,sdp)
+  tau.x <- pow(sigma.x,-2)
+  for (i in 1:4) {
+    b[i] ~ dnorm(0,pow(sdp,-2))
+  }
+  for (i in 1:n.parties) {
+    mu.x[i] ~ dnorm(0,pow(sdp,-2))
+  }
+  for (i in 2:n.parties) {
+    for (j in 1:n.states) {
+      x[i,j] ~ dnorm(mu.x[i],tau.x)
+    }
+  }
+  for (j in 1:n.states) {
+    x[1,j] <- mu.x[1]
+  }
+  c2 <- (sum(x[1,]>x[2,]))  
+  for (i in 1:n.groups) {
+    g[i] ~ dnorm(0,tau.g)
+  }
+  sigma.g ~ dunif(0,sdp)
+  tau.g <- pow(sigma.g,-2)
+}
+
+
+
+## model.09 with gov state
+model.bugs.11 <- function() {
+  sdp <- 10
+  for (i in 1:n.rows) {
+    y[i]~dbern(p[i])
+    d[i] <- abs(x[party.i[i],state.i[i]]-x[party.j[i],state.i[i]])
+    xb1[i] <- -d[i]+g[group[i]]+b[1]+b[2]*log.votes.i[i]+
+      b[3]*log.magnitude[i]+b[4]*party.gov.i[i]
+    xb2[i] <- -d[i]+g[group[i]]+b[1]+b[2]*log.votes.j[i]+
+      b[3]*log.magnitude[i]+b[4]*party.gov.j[i]
+    p[i] <- phi(xb1[i])*phi(xb2[i])
+  }
+  ##correct
+  c1 <- (sum((p>.5)*y)+sum((p<.5)*(1-y)))/n.rows
+  ##  priors
+  tau.x <- pow(sigma.x,-2)
+  sigma.x ~ dunif(0,sdp)
+  for (i in 1:4) {
+    b[i] ~ dnorm(0,pow(sdp,-2))
+  }
+  for (i in 1:n.parties) {
+    mu.x[i] ~ dnorm(0,pow(sdp,-2))
+  }
+  for (i in 1:n.parties) {
+    for (j in 1:n.states) {
+      x[i,j] ~ dnorm(mu.x[i],tau.x)
+    }
+  }
+  for (i in 1:n.groups) {
+    g[i] ~ dnorm(0,tau.g)
+  }
+  sigma.g ~ dunif(0,sdp)
+  tau.g <- pow(sigma.g,-2)
+}
+
+
+## the ideal poins cannot pin point location or scale.
+model.bugs.10 <- function() {
+    sdp <- 10
+    for (i in 1:n.rows) {
+        y[i]~dbern(p[i])
+        d[i] <- abs(x[party.i[i],state.i[i]]-x[party.j[i],state.i[i]])
+        xb1[i] <- -d[i]+g[group[i]]+b[1]+b[2]*log.votes.i[i]+
+            b[3]*log.magnitude[i]+s[state.i[i]]
+        xb2[i] <- -d[i]+g[group[i]]+b[1]+b[2]*log.votes.j[i]+
+            b[3]*log.magnitude[i]+s[state.i[i]]
+        p[i] <- phi(xb1[i])*phi(xb2[i])
+    }
+    ##correct
+    c1 <- (sum((p>.5)*y)+sum((p<.5)*(1-y)))/n.rows
+    ##  priors
+    tau.x <- pow(sigma.x,-2)
+    sigma.x ~ dunif(0,sdp)
+    for (i in 1:3) {
+        b[i] ~ dnorm(0,pow(sdp,-2))
+    }
+    for (i in 1:n.parties) {
+        mu.x[i] ~ dnorm(0,pow(sdp,-2))
+        for (j in 1:n.states) {
+            x[i,j] ~ dnorm(mu.x[i],tau.x)
+        }
+    }
+    for (i in 1:n.groups) {
+        g[i] ~ dnorm(0,tau.g)
+    }
+    sigma.g ~ dunif(0,sdp)
+    tau.g <- pow(sigma.g,-2)
+    for (i in 1:n.states) {
+        s[i] ~ dnorm(0,tau.s)
+    }
+    sigma.s ~ dunif(0,sdp)
+    tau.s <- pow(sigma.s,-2)
+}
+
+
+## s is not identified, so we exclude it from this model
+## more informative priors on sigma.x
+model.bugs.09 <- function() {
+    sdp <- 10
+    for (i in 1:n.rows) {
+        y[i]~dbern(p[i])
+        d[i] <- abs(x[party.i[i],state.i[i]]-x[party.j[i],state.i[i]])
+        xb1[i] <- -d[i]+g[group[i]]+b[1]+b[2]*log.votes.i[i]+
+            b[3]*log.magnitude[i]
+        xb2[i] <- -d[i]+g[group[i]]+b[1]+b[2]*log.votes.j[i]+
+            b[3]*log.magnitude[i]
+        p[i] <- phi(xb1[i])*phi(xb2[i])
+    }
+    ##correct
+    c1 <- (sum((p>.5)*y)+sum((p<.5)*(1-y)))/n.rows
+    ##  priors
+    tau.x <- pow(sigma.x,-2)
+    sigma.x ~ dunif(0,1)
+    for (i in 1:3) {
+        b[i] ~ dnorm(0,pow(sdp,-2))
+    }
+    for (i in 1:n.parties) {
+        mu.x[i] ~ dnorm(0,pow(sdp,-2))
+        for (j in 1:n.states) {
+            x[i,j] ~ dnorm(mu.x[i],tau.x)
+        }
+    }
+    for (i in 1:n.groups) {
+        g[i] ~ dnorm(0,tau.g)
+    }
+    sigma.g ~ dunif(0,sdp)
+    tau.g <- pow(sigma.g,-2)
+}
+
+
 ## s is not identified, so we exclude it from this model
 model.bugs.08 <- function() {
     sdp <- 10
@@ -14,7 +264,7 @@ model.bugs.08 <- function() {
     c1 <- (sum((p>.5)*y)+sum((p<.5)*(1-y)))/n.rows
     ##  priors
     tau.x <- pow(sigma.x,-2)
-    sigma.x ~ dunif(0,sdp)
+    sigma.x ~ dunif(0,1)
     for (i in 1:3) {
         b[i] ~ dnorm(0,pow(sdp,-2))
     }

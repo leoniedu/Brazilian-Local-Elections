@@ -1,3 +1,43 @@
+fx <- function(x,...) {
+  x <- c(quantile(x,probs=c(0.1,.5,.9),...),length(x))
+  names(x) <- c("lo","median","hi","n")
+  x
+}
+
+spath <- function(x) paste("../results/",office,"/",year,"/",x,sep="")
+
+rrank <- function(...) rank(...,ties.method="first")
+
+dhondt <- function(df,eq=TRUE) {
+  ## FIx: create options to name the votes, magnitude
+  ##cat(".")
+  v <- df$votes
+  M <- df$total.elected[1]
+  if (eq) {
+    ## electoral quotient (less than this and no one gets elected)
+    neq <- v<(sum(v)/M)
+    v[neq] <- 0
+  }
+  s <- rep(0,length(v))
+  for (i in 1:M) {
+    j <- which.max(v/(s+1))
+    s[j] <- s[j]+1
+  }
+  data.frame(df,elected.calc=s)
+}
+
+bg <- function(data,group="coalition") {
+  data$candidates <- data$vote.type=="individual"
+  ##data <- subset(dnow,office=="Vereador" & uf=="AC")
+    data$group <- data[,group]
+    ##data <- subset(data,municipio=="SANTA ROSA")
+    data <- recast(data,group+munuf~variable,measure.var=c("votes","elected","candidates"),fun.aggregate=sum)
+    data$total.elected <- with(data,ave(elected,munuf,FUN=sum))
+    res <- ddply(data,.(munuf),dhondt)
+    names(res)[names(res)=="group"] <- group
+    res
+}
+
 plot.text <- function(x,y,labels,cex=.75,...) {
     plot(x,y,type="n",main=paste("r=",round(cor(x,y,use="pair"),2),sep="")
          ,...)
@@ -36,7 +76,7 @@ get.pca <- function(dnow) {
 }
 
 iqr <- function(x, ..., probs=c(0.025,.5, 0.975)) { 
-    qs <- quantile(as.numeric(x),na.rm = T) 
+    qs <- quantile(as.numeric(x),na.rm = T,probs=probs) 
     names(qs) <- c("ymin","y", "ymax") 
     qs 
 } 
